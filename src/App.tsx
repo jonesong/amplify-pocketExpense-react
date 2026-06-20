@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuthenticator } from '@aws-amplify/ui-react';
+import { useAuthenticator } from "@aws-amplify/ui-react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
 import TransactionPage from "./components/TransactionPage";
@@ -7,12 +7,15 @@ import TransactionPage from "./components/TransactionPage";
 const client = generateClient<Schema>();
 
 function App() {
-  const [accounts, setAccounts] = useState<Schema["Account"]["type"][]>([]);
-  const [accountName, setAccountName] = useState("");
-  const [loading, setLoading] = useState(false);
   const { user, signOut } = useAuthenticator();
-  const [selectedAccount, setSelectedAccount] = useState<Schema["Account"]["type"] | null>(null);
-  
+
+  const [accounts, setAccounts] = useState<
+    Schema["Account"]["type"][]
+  >([]);
+
+  const [selectedAccount, setSelectedAccount] =
+    useState<Schema["Account"]["type"] | null>(null);
+
   async function loadAccounts() {
     const { data, errors } = await client.models.Account.list();
 
@@ -22,28 +25,6 @@ function App() {
     }
 
     setAccounts(data);
-  }
-
-  async function createAccount(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!accountName.trim()) return;
-
-    setLoading(true);
-
-    const { errors } = await client.models.Account.create({
-      name: accountName.trim(),
-    });
-
-    setLoading(false);
-
-    if (errors) {
-      console.error(errors);
-      return;
-    }
-
-    setAccountName("");
-    await loadAccounts();
   }
 
   useEffect(() => {
@@ -68,87 +49,63 @@ function App() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: "800px",
-        margin: "0 auto",
-        padding: "2rem",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h1>{user?.signInDetails?.loginId}'s Money Tracker</h1>
-      <button onClick={signOut}>Sign out</button>
-      <form
-        onSubmit={createAccount}
-        style={{
-          display: "flex",
-          gap: "1rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Account name (e.g. GCash)"
-          value={accountName}
-          onChange={(e) => setAccountName(e.target.value)}
-          style={{
-            flex: 1,
-            padding: "0.75rem",
-          }}
-        />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Add Account"}
+      {/* HEADER */}
+      <div className="flex items-center justify-between p-4 bg-white shadow-sm">
+        <h1 className="text-lg font-semibold">
+          {user?.signInDetails?.loginId}'s Money Tracker
+        </h1>
+
+        <button
+          onClick={signOut}
+          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+        >
+          Sign out
         </button>
-      </form>
-      <>
-      {selectedAccount ? (
-        <TransactionPage
-          account={selectedAccount}
-          onBack={() => setSelectedAccount(null)}
-        />
-      ) : (
-        <div>
-          <h2>Accounts</h2>
+      </div>
 
-          {accounts.length === 0 ? (
-            <p>No accounts created yet.</p>
-          ) : (
-            <div
-              style={{
-                display: "grid",
-                gap: "1rem",
-              }}
-            >
-              {accounts.map((account) => (
-                <div
-                  key={account.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    padding: "1rem",
-                  }}
-                >
-                  <h3>{account.name}</h3>
+      {/* CONTENT */}
+      <div className="p-4">
 
-                  <p>
-                    Account ID:
-                    <br />
-                    <small>{account.id}</small>
-                  </p>
+        <h2 className="text-md font-semibold mb-4">
+          Accounts
+        </h2>
 
-                  <button
-                    onClick={() => setSelectedAccount(account)}
-                  >
-                    View Transactions
-                  </button>
+        {accounts.length === 0 ? (
+          <p className="text-gray-500">
+            No accounts found.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {accounts.map((account) => (
+              <div
+                key={account.id}
+                className="p-4 bg-white rounded-lg shadow-sm flex justify-between items-center"
+              >
+                <div>
+                  <div className="font-medium">
+                    {account.name}
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    ID: {account.id}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      </> 
+
+                <button
+                  onClick={() =>
+                    setSelectedAccount(account)
+                  }
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  View
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

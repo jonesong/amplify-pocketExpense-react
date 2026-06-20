@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../../amplify/data/resource";
 import NewTransactionForm from "./NewTransactionForm";
+import EditTransactionForm from "./EditTransactionForm";
 
 const client = generateClient<Schema>();
 
@@ -12,6 +13,9 @@ interface Props {
 
 export default function TransactionPage({ account, onBack }: Props) {
   const [showNewTransaction, setShowNewTransaction] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState<
+    string | null
+  >(null);
 
   const [transactions, setTransactions] = useState<
     Schema["Transaction"]["type"][]
@@ -31,7 +35,13 @@ export default function TransactionPage({ account, onBack }: Props) {
       return;
     }
 
-    setTransactions(data);
+    const sorted = [...data].sort(
+      (a, b) =>
+        new Date(a.createdAt ?? 0).getTime() -
+        new Date(b.createdAt ?? 0).getTime()
+    );
+
+    setTransactions(sorted);
   }
 
   useEffect(() => {
@@ -40,84 +50,153 @@ export default function TransactionPage({ account, onBack }: Props) {
 
   async function handleSaved() {
     setShowNewTransaction(false);
+    setEditingTransactionId(null);
     await loadTransactions();
   }
 
-  if (showNewTransaction) {
-    return (
-      <div className="p-4">
-        <NewTransactionForm
-          accountId={account.id}
-          onSaved={handleSaved}
-          onCancel={() => setShowNewTransaction(false)}
-        />
-      </div>
-    );
-  }
+  const finalBalance = transactions.reduce((sum, t) => {
+    const amount = Number(t.amount);
+    const isIncome = t.TransactionType === "INCOME";
+    return isIncome ? sum + amount : sum - amount;
+  }, 0);
+
+  let runningBalance = 0;
+
+  const formatAmount = (value: number) =>
+    new Intl.NumberFormat("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+
+  // ✅ find transaction object from ID
+  const editingTransaction =
+    transactions.find((t) => t.id === editingTransactionId) ?? null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
+      {/* HEADER */}
+      <div className="flex items-center justify-between p-4">
         <button
           onClick={onBack}
-          className="text-sm text-gray-600 hover:text-black"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-600 text-white text-xl hover:bg-gray-900"
         >
-          ← Back
+          ←
         </button>
+
+        <h2 className="text-lg font-semibold">{account.name}</h2>
 
         <button
           onClick={() => setShowNewTransaction(true)}
-          className="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white text-xl hover:bg-blue-600"
         >
-          + Add
+          +
         </button>
       </div>
 
-      {/* Account Title */}
-      <h2 className="text-xl font-semibold mb-4">{account.name}</h2>
+      {/* CONTENT */}
+      <div className="flex-1 p-4 space-y-3">
+        {/* START BALANCE */}
+        <div className="flex justify-between px-4 py-3 bg-white rounded-lg shadow-sm">
+          <div className="text-sm font-medium text-gray-700">
+            Start Balance
+          </div>
+          <div className="text-sm font-semibold text-gray-900">
+            ₱0.00
+          </div>
+        </div>
 
-      {/* Transactions List */}
-      <div className="bg-white rounded-xl shadow-sm divide-y">
-        {transactions.map((t) => {
-          const isIncome = t.TransactionType === "INCOME";
+        {/* TRANSACTIONS */}
+        <div className="bg-white rounded-xl shadow-sm divide-y">
+          {transactions.map((t) => {
+            const amount = Number(t.amount);
+            const isIncome = t.TransactionType === "INCOME";
 
-          return (
-            <div
-              key={t.id}
-              className="flex items-center justify-between p-4 hover:bg-gray-50"
-            >
-              {/* LEFT SIDE */}
-              <div className="flex flex-col">
-                <div className="text-sm font-medium text-gray-900">
-                  {t.payee}
+            runningBalance += isIncome ? amount : -amount;
+
+            return (
+              <div
+                key={t.id}
+                onClick={() => setEditingTransactionId(t.id)}
+                className="flex justify-between p-4 hover:bg-gray-50 cursor-pointer"
+              >
+                {/* LEFT */}
+                <div className="flex flex-col min-w-[250px]">
+                  <div className="text-sm font-medium text-gray-900">
+                    {t.payee}
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    {t.date
+                      ? new Date(t.date).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : ""}
+                  </div>
                 </div>
 
-                <div className="text-xs text-gray-500">
-                  {t.createdAt
-                    ? new Date(t.createdAt).toLocaleDateString()
-                    : ""}
+                {/* RIGHT */}
+                <div className="flex flex-col items-end min-w-[150px]">
+                  <div
+                    className={`text-sm font-semibold ${
+                      isIncome ? "text-green-600" : "text-red-500"
+                    }`}
+                  >
+                    {isIncome ? "+" : "-"}₱{formatAmount(amount)}
+                  </div>
+
+                  <div className="text-xs text-gray-400">
+                    ₱{formatAmount(runningBalance)}
+                  </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      </div>
 
-              {/* RIGHT SIDE */}
-              <div className="flex flex-col items-end">
-                <div
-                  className={`text-sm font-semibold ${
-                    isIncome ? "text-green-600" : "text-gray-900"
-                  }`}
-                >
-                  {isIncome ? "+" : "-"}₱{t.amount}
-                </div>
+      {/* FOOTER */}
+      <div className="flex justify-between items-center px-6 py-4 bg-white border-t">
+        <div className="text-sm text-gray-600 font-medium">
+          Balance
+        </div>
 
-                <div className="text-xs text-gray-400">
-                  Balance
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>    
+        <div className="text-base font-bold text-gray-900">
+          ₱{formatAmount(finalBalance)}
+        </div>
+      </div>
+
+      {/* ================= MODALS ================= */}
+
+      {/* NEW TRANSACTION MODAL */}
+      {showNewTransaction && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-xl p-4">
+            <NewTransactionForm
+              accountId={account.id}
+              onSaved={handleSaved}
+              onCancel={() => setShowNewTransaction(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TRANSACTION MODAL */}
+      {editingTransaction && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div
+            className="w-full max-w-lg bg-white rounded-xl shadow-xl p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <EditTransactionForm
+              transaction={editingTransaction}
+              onSaved={handleSaved}
+              onCancel={() => setEditingTransactionId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

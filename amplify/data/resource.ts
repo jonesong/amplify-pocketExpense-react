@@ -1,5 +1,23 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend'; 
 
+const TransactionCategory = a.enum([
+    "CASH",
+    "CLOTHING",
+    "FOOD",
+    "GIFTS",
+    "GROCERIES",
+    "TRANSPORT",
+    "SHOPPING",
+    "BILLS",
+    "ENTERTAINMENT",
+    "HEALTH",
+    "SALARY",
+    "SAVINGS",
+    "TRANSFER",
+    "TRAVEL",
+    "OTHER",
+  ]);
+
 const schema = a.schema({
   // 1. Account Model (e.g., Gcash, Bank, Cash)
   Account: a.model({
@@ -17,7 +35,7 @@ const schema = a.schema({
     ]),
     amount: a.float().required(),
     payee: a.string(),
-    category: a.string().required(), // e.g., "Others"
+    category: TransactionCategory,
     accountId: a.string().required(), // Foreign key linking back to Account model
     account: a.belongsTo('Account', 'accountId'),
     date: a.string().required(), // YYYY-MM-DD

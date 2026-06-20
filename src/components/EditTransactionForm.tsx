@@ -5,7 +5,7 @@ import { categories, type Category } from "../../src/constants/categories";
 
 const client = generateClient<Schema>();
 
-// ✅ MOVE OUTSIDE (fix focus/input bug)
+// ✅ MOVE OUTSIDE COMPONENT (IMPORTANT FIX)
 function InputRow({
   label,
   children,
@@ -24,42 +24,48 @@ function InputRow({
 }
 
 interface Props {
-  accountId: string;
+  transaction: Schema["Transaction"]["type"];
   onSaved: () => void;
   onCancel: () => void;
 }
 
-export default function NewTransactionForm({
-  accountId,
+export default function EditTransactionForm({
+  transaction,
   onSaved,
   onCancel,
 }: Props) {
-  const [type, setType] = useState<
-    "EXPENSE" | "INCOME" | "TRANSFER"
-  >("EXPENSE");
+  const [payee, setPayee] = useState(transaction.payee ?? "");
 
-  // ✅ FIX: string amount (same fix as edit form)
-  const [amount, setAmount] = useState("");
-
-  const [payee, setPayee] = useState("");
-  const [category, setCategory] = useState<Category>("OTHER");
-
-  const [date, setDate] = useState(
-    new Date().toISOString().split("T")[0]
+  const [amount, setAmount] = useState(
+    transaction.amount ? String(transaction.amount) : ""
   );
 
-  const [note, setNote] = useState("");
+  const [type, setType] = useState(
+    transaction.TransactionType ?? "EXPENSE"
+  );
 
-  async function save() {
-    await client.models.Transaction.create({
-      TransactionType: type,
-      amount: parseFloat(amount || "0"),
+  const [category, setCategory] = useState<Category>(
+    (transaction.category as Category) ?? "OTHER"
+  );
+
+  const [date, setDate] = useState(transaction.date ?? "");
+  const [note, setNote] = useState(transaction.note ?? "");
+
+  async function handleUpdate() {
+    const { errors } = await client.models.Transaction.update({
+      id: transaction.id,
       payee,
+      amount: parseFloat(amount || "0"),
+      TransactionType: type,
       category,
-      accountId,
       date,
       note,
     });
+
+    if (errors) {
+      console.error(errors);
+      return;
+    }
 
     onSaved();
   }
@@ -77,7 +83,7 @@ export default function NewTransactionForm({
         </button>
 
         <h2 className="text-lg font-semibold">
-          New Transaction
+          Edit Transaction
         </h2>
 
         <div className="w-10" />
@@ -87,27 +93,14 @@ export default function NewTransactionForm({
       <div className="flex-1 p-4">
         <div className="bg-white rounded-xl shadow-sm p-4">
 
-          {/* TYPE */}
-          <InputRow label="Type">
-            <select
-              className="w-full text-sm outline-none bg-white border rounded px-2 py-1"
-              value={type}
-              onChange={(e) =>
-                setType(
-                  e.target.value as
-                    | "INCOME"
-                    | "EXPENSE"
-                    | "TRANSFER"
-                )
-              }
-            >
-              <option value="EXPENSE">Expense</option>
-              <option value="INCOME">Income</option>
-              <option value="TRANSFER">Transfer</option>
-            </select>
+          <InputRow label="Payee">
+            <input
+              className="w-full text-sm outline-none"
+              value={payee}
+              onChange={(e) => setPayee(e.target.value)}
+            />
           </InputRow>
 
-          {/* AMOUNT (FIXED) */}
           <InputRow label="Amount">
             <input
               className="w-full text-sm outline-none"
@@ -118,16 +111,19 @@ export default function NewTransactionForm({
             />
           </InputRow>
 
-          {/* PAYEE */}
-          <InputRow label="Payee">
-            <input
-              className="w-full text-sm outline-none"
-              value={payee}
-              onChange={(e) => setPayee(e.target.value)}
-            />
+          <InputRow label="Type">
+            <select
+              className="w-full text-sm outline-none bg-transparent"
+              value={type}
+              onChange={(e) =>
+                setType(e.target.value as "INCOME" | "EXPENSE")
+              }
+            >
+              <option value="INCOME">Income</option>
+              <option value="EXPENSE">Expense</option>
+            </select>
           </InputRow>
 
-          {/* CATEGORY */}
           <InputRow label="Category">
             <select
               className="w-full text-sm outline-none bg-transparent"
@@ -144,7 +140,6 @@ export default function NewTransactionForm({
             </select>
           </InputRow>
 
-          {/* DATE */}
           <InputRow label="Date">
             <input
               className="w-full text-sm outline-none"
@@ -154,24 +149,21 @@ export default function NewTransactionForm({
             />
           </InputRow>
 
-          {/* NOTE */}
           <InputRow label="Note">
             <textarea
               className="w-full text-sm outline-none resize-none"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Optional note..."
             />
           </InputRow>
         </div>
 
-        {/* ACTIONS */}
         <button
-          onClick={save}
+          onClick={handleUpdate}
           className="w-full mt-4 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600"
         >
-          Save Transaction
+          Save Changes
         </button>
       </div>
     </div>
