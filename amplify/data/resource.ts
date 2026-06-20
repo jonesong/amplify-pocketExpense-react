@@ -4,12 +4,17 @@ const schema = a.schema({
   // 1. Account Model (e.g., Gcash, Bank, Cash)
   Account: a.model({
     name: a.string().required(),
+    initialBalance: a.float().default(0),
     transactions: a.hasMany('Transaction', 'accountId'), // One-to-Many Relationship
   }).authorization((allow) => [allow.owner()]),
 
   // 2. Comprehensive Transaction Model matching your screenshot
   Transaction: a.model({
-    type: a.enum(['EXPENSE', 'INCOME', 'TRANSFER']), // Red minus vs green plus toggle
+    TransactionType: a.enum([
+      'EXPENSE',
+      'INCOME',
+      'TRANSFER',
+    ]),
     amount: a.float().required(),
     payee: a.string(),
     category: a.string().required(), // e.g., "Others"

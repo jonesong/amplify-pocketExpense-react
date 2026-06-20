@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
+import TransactionPage from "./components/TransactionPage";
 
 const client = generateClient<Schema>();
 
@@ -10,7 +11,8 @@ function App() {
   const [accountName, setAccountName] = useState("");
   const [loading, setLoading] = useState(false);
   const { user, signOut } = useAuthenticator();
-
+  const [selectedAccount, setSelectedAccount] = useState<Schema["Account"]["type"] | null>(null);
+  
   async function loadAccounts() {
     const { data, errors } = await client.models.Account.list();
 
@@ -56,6 +58,15 @@ function App() {
     return () => sub.unsubscribe();
   }, []);
 
+  if (selectedAccount) {
+    return (
+      <TransactionPage
+        account={selectedAccount}
+        onBack={() => setSelectedAccount(null)}
+      />
+    );
+  }
+
   return (
     <div
       style={{
@@ -65,7 +76,7 @@ function App() {
         fontFamily: "Arial, sans-serif",
       }}
     >
-      <h1>{user?.signInDetails?.loginId}'s todos</h1>
+      <h1>{user?.signInDetails?.loginId}'s Money Tracker</h1>
       <button onClick={signOut}>Sign out</button>
       <form
         onSubmit={createAccount}
@@ -90,44 +101,54 @@ function App() {
           {loading ? "Creating..." : "Add Account"}
         </button>
       </form>
+      <>
+      {selectedAccount ? (
+        <TransactionPage
+          account={selectedAccount}
+          onBack={() => setSelectedAccount(null)}
+        />
+      ) : (
+        <div>
+          <h2>Accounts</h2>
 
-      <div>
-        <h2>Accounts</h2>
+          {accounts.length === 0 ? (
+            <p>No accounts created yet.</p>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gap: "1rem",
+              }}
+            >
+              {accounts.map((account) => (
+                <div
+                  key={account.id}
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                  }}
+                >
+                  <h3>{account.name}</h3>
 
-        {accounts.length === 0 ? (
-          <p>No accounts created yet.</p>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: "1rem",
-            }}
-          >
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  padding: "1rem",
-                }}
-              >
-                <h3>{account.name}</h3>
+                  <p>
+                    Account ID:
+                    <br />
+                    <small>{account.id}</small>
+                  </p>
 
-                <p>
-                  Account ID:
-                  <br />
-                  <small>{account.id}</small>
-                </p>
-
-                <button>
-                  View Transactions
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  <button
+                    onClick={() => setSelectedAccount(account)}
+                  >
+                    View Transactions
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      </> 
     </div>
   );
 }
