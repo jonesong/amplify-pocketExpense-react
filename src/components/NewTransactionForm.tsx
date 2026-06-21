@@ -14,11 +14,30 @@ function InputRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b gap-[120px]">
-      <div className="text-sm text-gray-600 w-[160px]">
+    <div className="
+      flex flex-col
+      md:flex-row
+      md:items-center
+      md:justify-between
+      py-3
+      border-b
+      gap-2
+      md:gap-8
+    ">
+      {/* Label */}
+      <div className="
+        text-sm
+        text-gray-600
+        md:w-40
+        shrink-0
+      ">
         {label}
       </div>
-      <div className="flex-1">{children}</div>
+
+      {/* Input */}
+      <div className="flex-1">
+        {children}
+      </div>
     </div>
   );
 }

@@ -72,6 +72,52 @@ export default function TransactionPage({ account, onBack }: Props) {
   const editingTransaction =
     transactions.find((t) => t.id === editingTransactionId) ?? null;
 
+  function getStartOfWeek(date = new Date()) {
+    const d = new Date(date);
+    const day = d.getDay(); // Sunday = 0
+
+    // convert to Monday start
+    const diff = day === 0 ? -6 : 1 - day;
+
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function formatDay(date: Date) {
+    return date.toLocaleDateString("en-US", { weekday: "short" });
+  }
+
+  function buildWeek(transactions: Schema["Transaction"]["type"][]) {
+    const start = getStartOfWeek();
+    const days = [];
+
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(start);
+      day.setDate(start.getDate() + i);
+
+      const dayStr = day.toISOString().split("T")[0];
+
+      const dailyTx = transactions.filter(t => t.date === dayStr);
+
+      const total = dailyTx.reduce((sum, t) => {
+        const amt = Number(t.amount);
+        return t.TransactionType === "INCOME"
+          ? sum + amt
+          : sum - amt;
+      }, 0);
+
+      days.push({
+        date: dayStr,
+        label: formatDay(day),
+        total,
+      });
+    }
+
+    return days;
+  }
+  const week = buildWeek(transactions);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
       {/* HEADER */}
