@@ -64,6 +64,9 @@ function buildWeek(
   return week;
 }
 
+type TransactionUI = Schema["Transaction"]["type"] & {
+  accountName?: string;
+};
 // =======================
 
 function App() {
@@ -71,9 +74,7 @@ function App() {
   
   const [weekOffset, setWeekOffset] = useState(0);
   const [accounts, setAccounts] = useState<Schema["Account"]["type"][]>([]);
-  const [transactions, setTransactions] = useState<
-    Schema["Transaction"]["type"][]
-  >([]);
+  const [transactions, setTransactions] = useState<TransactionUI[]>([]);
 
   const [selectedAccount, setSelectedAccount] =
     useState<Schema["Account"]["type"] | null>(null);
