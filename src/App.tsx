@@ -79,7 +79,7 @@ function App() {
     useState<Schema["Account"]["type"] | null>(null);
 
   const [accountName, setAccountName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   // =======================
   async function loadAccounts() {
