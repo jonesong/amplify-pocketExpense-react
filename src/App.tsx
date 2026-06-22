@@ -28,8 +28,15 @@ function formatDateKey(date: Date) {
   return date.toISOString().split("T")[0];
 }
 
-function buildWeek(transactions: Schema["Transaction"]["type"][]) {
+function buildWeek(
+  transactions: Schema["Transaction"]["type"][],
+  weekOffset: number
+) {
   const start = getStartOfWeek();
+
+  // shift weeks forward/backward
+  start.setDate(start.getDate() + weekOffset * 7);
+
   const week = [];
 
   for (let i = 0; i < 7; i++) {
@@ -61,7 +68,8 @@ function buildWeek(transactions: Schema["Transaction"]["type"][]) {
 
 function App() {
   const { user, signOut } = useAuthenticator();
-
+  
+  const [weekOffset, setWeekOffset] = useState(0);
   const [accounts, setAccounts] = useState<Schema["Account"]["type"][]>([]);
   const [transactions, setTransactions] = useState<
     Schema["Transaction"]["type"][]
@@ -88,8 +96,17 @@ function App() {
   }
 
   async function loadTransactions() {
-    const { data } = await client.models.Transaction.list();
-    setTransactions(data);
+    const [{ data: tx }, { data: acc }] = await Promise.all([
+      client.models.Transaction.list(),
+      client.models.Account.list(),
+    ]);
+
+    const enriched = tx.map((t) => ({
+      ...t,
+      accountName: acc.find((a) => a.id === t.accountId)?.name ?? "Account",
+    }));
+
+    setTransactions(enriched);
   }
 
   async function createAccount(e: React.FormEvent) {
@@ -126,8 +143,13 @@ function App() {
     };
   }, []);
 
-  const week = buildWeek(transactions);
+  const week = buildWeek(transactions, weekOffset);
+  // ✅ FILTER WEEK TRANSACTIONS
+  const weekDates = new Set(week.map((d) => d.date));
 
+  const weekTransactions = transactions.filter((t) =>
+    weekDates.has(t.date)
+  );
   // =======================
   // TRANSACTION PAGE
   // =======================
@@ -168,7 +190,7 @@ function App() {
             {menuOpen && (
               <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-lg w-44 z-50 overflow-hidden">
                 <button
-                  className="w-full text-left px-4 py-3 !text-black dark:!text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => {
                     setView("calendar");
                     setMenuOpen(false);
@@ -178,7 +200,7 @@ function App() {
                 </button>
 
                 <button
-                  className="w-full text-left px-4 py-3 !text-black dark:!text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => {
                     setView("dashboard");
                     setMenuOpen(false);
@@ -194,10 +216,28 @@ function App() {
 
       {/* ================= CALENDAR ================= */}
       {view === "calendar" && (
-        <div className="p-4 relative">
-
+        <div className="p-4">
           <h2 className="text-sm font-semibold mb-2">This Week</h2>
+          <div className="flex items-center justify-between mb-2 text-xs">
+            <button
+              onClick={() => setWeekOffset((prev) => prev - 1)}
+              className="px-3 py-1 bg-gray-200 rounded text-xs"
+            >
+              ◀ Prev
+            </button>
 
+            <div className="text-sm font-semibold">
+              Week {weekOffset === 0 ? "(This Week)" : weekOffset}
+            </div>
+
+            <button
+              onClick={() => setWeekOffset((prev) => prev + 1)}
+              className="px-3 py-1 bg-gray-200 rounded text-xs"
+            >
+              Next ▶
+            </button>
+          </div>
+          {/* WEEK ROW */}
           <div className="flex gap-2 overflow-x-auto">
             {week.map((d) => (
               <div
@@ -206,24 +246,71 @@ function App() {
               >
                 <div className="text-xs text-gray-500">{d.label}</div>
                 <div className="font-semibold">{d.day}</div>
-                <div className={`text-xs mt-1 ${
-                  d.total >= 0 ? "text-green-600" : "text-red-500"
-                }`}>
+                <div
+                  className={`text-xs mt-1 ${
+                    d.total >= 0 ? "text-green-600" : "text-red-500"
+                  }`}
+                >
                   ₱{Math.abs(d.total).toFixed(2)}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* FLOATING + BUTTON */}
-          <button
-            onClick={() => setShowNewTransaction(true)}
-            className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full text-2xl shadow-lg"
-          >
-            +
-          </button>
+          {/* ================= WEEK TRANSACTIONS ================= */}
+          <div className="mt-4 space-y-2">
+            <div className="text-xs font-semibold text-gray-500">
+              This Week Transactions
+            </div>
+
+            {weekTransactions.length === 0 ? (
+              <div className="text-xs text-gray-400">
+                No transactions this week
+              </div>
+            ) : (
+              weekTransactions.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm"
+                >
+                  {/* LEFT */}
+                  <div className="flex flex-col">
+                    <div className="text-sm font-medium">
+                      {t.payee ?? "No Payee"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {t.accountName ?? "Account"}
+                    </div>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div
+                    className={`text-sm font-semibold ${
+                      t.TransactionType === "INCOME"
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {t.TransactionType === "INCOME" ? "+" : "-"}₱
+                    {Number(t.amount).toFixed(2)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* BUTTON MOVED BELOW WEEK DAYS */}
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={() => setShowNewTransaction(true)}
+              className="w-14 h-14 bg-blue-500 text-white rounded-full text-2xl shadow-lg"
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
+
 
       {/* ================= DASHBOARD ================= */}
       {view === "dashboard" && (
