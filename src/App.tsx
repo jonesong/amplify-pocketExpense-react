@@ -157,29 +157,38 @@ function App() {
             Sign out
           </button>
 
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-10 h-10 bg-orange-400 rounded-lg"
-          >
-            ☰
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-10 h-10 bg-orange-400 rounded-lg hover:bg-orange-500"
+            >
+              ☰
+            </button>
 
-          {menuOpen && (
-            <div className="absolute right-4 top-14 bg-white border shadow rounded w-40">
-              <button
-                className="w-full p-2 hover:bg-gray-100"
-                onClick={() => setView("calendar")}
-              >
-                Calendar
-              </button>
-              <button
-                className="w-full p-2 hover:bg-gray-100"
-                onClick={() => setView("dashboard")}
-              >
-                Dashboard
-              </button>
-            </div>
-          )}
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-lg w-44 z-50 overflow-hidden">
+                <button
+                  className="w-full text-left px-4 py-3 !text-black dark:!text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    setView("calendar");
+                    setMenuOpen(false);
+                  }}
+                >
+                  📅 Calendar
+                </button>
+
+                <button
+                  className="w-full text-left px-4 py-3 !text-black dark:!text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    setView("dashboard");
+                    setMenuOpen(false);
+                  }}
+                >
+                  📊 Dashboard
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
