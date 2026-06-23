@@ -12,10 +12,13 @@ const client = generateClient<Schema>();
 // =======================
 function getStartOfWeek(date = new Date()) {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
+  // const day = d.getDay();
+  // const diff = day === 0 ? -6 : 1 - day;
 
-  d.setDate(d.getDate() + diff);
+  // d.setDate(d.getDate() + diff);
+
+  // Sunday = first day of week
+  d.setDate(d.getDate() - d.getDay());
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -25,7 +28,11 @@ function formatDay(date: Date) {
 }
 
 function formatDateKey(date: Date) {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function buildWeek(
@@ -60,7 +67,7 @@ function buildWeek(
       total,
     });
   }
-
+  
   return week;
 }
 
@@ -68,7 +75,6 @@ type TransactionUI = Schema["Transaction"]["type"] & {
   accountName?: string;
 };
 // =======================
-
 function App() {
   const { user, signOut } = useAuthenticator();
   
@@ -135,7 +141,9 @@ function App() {
     });
 
     const txSub = client.models.Transaction.observeQuery().subscribe({
-      next: ({ items }) => setTransactions(items),
+      next: async () => {
+        await loadTransactions();
+      },
     });
 
     return () => {
@@ -163,13 +171,16 @@ function App() {
     );
   }
 
+  const today = formatDateKey(new Date());
+  
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-dvh bg-gray-50 flex flex-col">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between p-4 bg-white shadow-sm">
-        <h1 className="text-lg font-semibold">
+      <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-white border-b">
+        <h1 className="text-base font-semibold truncate max-w-[60%]">
           {user?.signInDetails?.loginId}'s Money Tracker
+          
         </h1>
 
         <div className="flex gap-2">
@@ -189,7 +200,7 @@ function App() {
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-lg w-44 z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-lg w-44 z-50">
                 <button
                   className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => {
@@ -214,138 +225,156 @@ function App() {
           </div>
         </div>
       </div>
-
-      {/* ================= CALENDAR ================= */}
-      {view === "calendar" && (
-        <div className="p-4">
-          <h2 className="text-sm font-semibold mb-2">This Week</h2>
-          <div className="flex items-center justify-between mb-2 text-xs">
-            <button
-              onClick={() => setWeekOffset((prev) => prev - 1)}
-              className="px-3 py-1 bg-gray-200 rounded text-xs"
-            >
-              ◀ Prev
-            </button>
-
-            <div className="text-sm font-semibold">
-              Week {weekOffset === 0 ? "(This Week)" : weekOffset}
-            </div>
-
-            <button
-              onClick={() => setWeekOffset((prev) => prev + 1)}
-              className="px-3 py-1 bg-gray-200 rounded text-xs"
-            >
-              Next ▶
-            </button>
-          </div>
-          {/* WEEK ROW */}
-          <div className="flex gap-2 overflow-x-auto">
-            {week.map((d) => (
-              <div
-                key={d.date}
-                className="min-w-[70px] bg-white rounded-lg shadow p-2 text-center"
-              >
-                <div className="text-xs text-gray-500">{d.label}</div>
-                <div className="font-semibold">{d.day}</div>
-                <div
-                  className={`text-xs mt-1 ${
-                    d.total >= 0 ? "text-green-600" : "text-red-500"
-                  }`}
-                >
-                  ₱{Math.abs(d.total).toFixed(2)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ================= WEEK TRANSACTIONS ================= */}
-          <div className="mt-4 space-y-2">
-            <div className="text-xs font-semibold text-gray-500">
-              This Week Transactions
-            </div>
-
-            {weekTransactions.length === 0 ? (
-              <div className="text-xs text-gray-400">
-                No transactions this week
-              </div>
-            ) : (
-              weekTransactions.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm"
-                >
-                  {/* LEFT */}
-                  <div className="flex flex-col">
-                    <div className="text-sm font-medium">
-                      {t.payee ?? "No Payee"}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {t.accountName ?? "Account"}
-                    </div>
-                  </div>
-
-                  {/* RIGHT */}
-                  <div
-                    className={`text-sm font-semibold ${
-                      t.TransactionType === "INCOME"
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
+      <div className="flex-1 overflow-y-auto">
+            {/* ================= CALENDAR ================= */}
+            {view === "calendar" && (
+              <div className="p-4">
+                <h2 className="text-sm font-semibold mb-2">This Week</h2>
+                <div className="flex items-center justify-between mb-1 text-[10px]">
+                  <button
+                    onClick={() => setWeekOffset((prev) => prev - 1)}
+                    className="px-2 py-0.5 bg-gray-200 rounded text-[10px]"
                   >
-                    {t.TransactionType === "INCOME" ? "+" : "-"}₱
-                    {Number(t.amount).toFixed(2)}
+                    ◀ Prev
+                  </button>
+
+                  <div className="text-sm font-semibold">
+                    Week {weekOffset === 0 ? "(This Week)" : weekOffset}
                   </div>
+
+                  <button
+                    onClick={() => setWeekOffset((prev) => prev + 1)}
+                    className="px-2 py-0.5 bg-gray-200 rounded text-[10px]"
+                  >
+                    Next ▶
+                  </button>
                 </div>
-              ))
+                {/* WEEK ROW */}
+                <div className="grid grid-cols-7 bg-white rounded-lg shadow overflow-hidden">
+                  {week.map((d) => (
+                    <div
+                      key={d.date}
+                      className={`text-center py-1 border-r last:border-r-0 ${
+                        d.date === today
+                          ? "bg-blue-50"
+                          : ""
+                      }`}
+                    >
+                      <div className="text-[10px] text-gray-500">
+                        {d.label}
+                      </div>
+
+                      <div
+                        className={`text-xs font-semibold ${
+                          d.date === today
+                            ? "text-blue-600"
+                            : ""
+                        }`}
+                      >
+                        {d.day}
+                      </div>
+
+                      <div
+                        className={`text-[9px] truncate px-1 ${
+                          d.total >= 0
+                            ? "text-green-600"
+                            : "text-red-500"
+                        }`}
+                      >
+                        ₱{Math.abs(d.total).toFixed(0)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ================= WEEK TRANSACTIONS ================= */}
+                <div className="mt-4 space-y-3 px-1">
+                  <div className="text-xs font-semibold text-gray-500">
+                    This Week Transactions
+                  </div>
+
+                  {weekTransactions.length === 0 ? (
+                    <div className="text-xs text-gray-400">
+                      No transactions this week
+                    </div>
+                  ) : (
+                    weekTransactions.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition"
+                      >
+                        {/* LEFT */}
+                        <div className="flex flex-col">
+                          <div className="text-sm font-medium">
+                            {t.payee ?? "No Payee"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {t.accountName ?? "Account"}
+                          </div>
+                        </div>
+
+                        {/* RIGHT */}
+                        <div
+                          className={`text-sm font-semibold ${
+                            t.TransactionType === "INCOME"
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {t.TransactionType === "INCOME" ? "+" : "-"}₱
+                          {Number(t.amount).toFixed(2)}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* BUTTON MOVED BELOW WEEK DAYS */}
+                <button
+                  onClick={() => setShowNewTransaction(true)}
+                  className="bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full text-2xl shadow-lg active:scale-95 transition z-40"
+                >
+                  +
+                </button>
+              </div>
             )}
-          </div>
-
-          {/* BUTTON MOVED BELOW WEEK DAYS */}
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => setShowNewTransaction(true)}
-              className="w-14 h-14 bg-blue-500 text-white rounded-full text-2xl shadow-lg"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      )}
 
 
-      {/* ================= DASHBOARD ================= */}
-      {view === "dashboard" && (
-        <div className="p-4">
+            {/* ================= DASHBOARD ================= */}
+            {view === "dashboard" && (
+              <div className="p-4">
 
-          <form onSubmit={createAccount} className="flex gap-3 mb-6">
-            <input
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
-              className="flex-1 p-3 border rounded-lg"
-              placeholder="Account name"
-            />
-            <button className="bg-blue-500 text-white px-4 rounded">
-              Add
-            </button>
-          </form>
+                <form onSubmit={createAccount} className="flex gap-3 mb-6">
+                  <input
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    className="flex-1 p-3 border rounded-lg"
+                    placeholder="Account name"
+                  />
+                  <button className="bg-blue-500 text-white px-4 rounded">
+                    Add
+                  </button>
+                </form>
 
-          {accounts.map((acc) => (
-            <div
-              key={acc.id}
-              className="p-4 bg-white rounded-lg shadow flex justify-between"
-            >
-              <div>{acc.name}</div>
+                {accounts.map((acc) => (
+                  <div
+                    key={acc.id}
+                    className="p-4 bg-white rounded-xl shadow-sm flex justify-between items-center active:scale-[0.99] transition"
+                  >
+                    <div>{acc.name}</div>
 
-              <button
-                onClick={() => setSelectedAccount(acc)}
-                className="bg-blue-500 text-white px-4 py-1 rounded"
-              >
-                View
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+                    <button
+                      onClick={() => setSelectedAccount(acc)}
+                      className="bg-blue-500 text-white px-4 py-1 rounded"
+                    >
+                      View
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+      </div>
+      
 
       {/* ================= NEW TRANSACTION ================= */}
       {showNewTransaction && (

@@ -71,9 +71,9 @@ export default function TransactionPage({ account, onBack }: Props) {
   // ✅ find transaction object from ID
   const editingTransaction =
     transactions.find((t) => t.id === editingTransactionId) ?? null;
- 
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col relative">
+    <div className="h-dvh bg-gray-50 flex flex-col">
       {/* HEADER */}
       <div className="flex items-center justify-between p-4">
         <button
@@ -94,7 +94,7 @@ export default function TransactionPage({ account, onBack }: Props) {
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
         {/* START BALANCE */}
         <div className="flex justify-between px-4 py-3 bg-white rounded-lg shadow-sm">
           <div className="text-sm font-medium text-gray-700">
@@ -117,31 +117,32 @@ export default function TransactionPage({ account, onBack }: Props) {
               <div
                 key={t.id}
                 onClick={() => setEditingTransactionId(t.id)}
-                className="flex justify-between p-4 hover:bg-gray-50 cursor-pointer"
+                className="flex justify-between gap-3 p-4 hover:bg-gray-50 cursor-pointer"
               >
                 {/* LEFT */}
-                <div className="flex flex-col min-w-[250px]">
-                  <div className="text-sm font-medium text-gray-900">
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="text-sm font-medium text-gray-900 truncate">
                     {t.payee}
                   </div>
 
                   <div className="text-xs text-gray-500">
                     {t.date
-                      ? new Date(t.date).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                      ? new Intl.DateTimeFormat("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "UTC", // Stops JS from converting to local time
+                      }).format(new Date(t.date))
                       : ""}
+
                   </div>
                 </div>
 
                 {/* RIGHT */}
-                <div className="flex flex-col items-end min-w-[150px]">
+                <div className="flex flex-col items-end shrink-0">
                   <div
-                    className={`text-sm font-semibold ${
-                      isIncome ? "text-green-600" : "text-red-500"
-                    }`}
+                    className={`text-sm font-semibold ${isIncome ? "text-green-600" : "text-red-500"
+                      }`}
                   >
                     {isIncome ? "+" : "-"}₱{formatAmount(amount)}
                   </div>
@@ -157,7 +158,7 @@ export default function TransactionPage({ account, onBack }: Props) {
       </div>
 
       {/* FOOTER */}
-      <div className="flex justify-between items-center px-6 py-4 bg-white border-t">
+      <div className="sticky bottom-0 flex justify-between items-center px-6 py-4 bg-white border-t z-10">
         <div className="text-sm text-gray-600 font-medium">
           Balance
         </div>

@@ -14,30 +14,11 @@ function InputRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="
-      flex flex-col
-      md:flex-row
-      md:items-center
-      md:justify-between
-      py-3
-      border-b
-      gap-2
-      md:gap-8
-    ">
-      {/* Label */}
-      <div className="
-        text-sm
-        text-gray-600
-        md:w-40
-        shrink-0
-      ">
+    <div className="flex flex-col gap-2 py-4 border-b border-gray-100 md:flex-row md:items-center md:justify-between">
+      <div className="text-sm font-medium text-gray-600 md:w-32 shrink-0">
         {label}
       </div>
-
-      {/* Input */}
-      <div className="flex-1">
-        {children}
-      </div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
@@ -84,10 +65,10 @@ export default function NewTransactionForm({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-dvh bg-gray-50 flex flex-col">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between p-4">
+      <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-gray-50 border-b">
         <button
           onClick={onCancel}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-600 text-white text-xl hover:bg-gray-900"
@@ -103,13 +84,13 @@ export default function NewTransactionForm({
       </div>
 
       {/* FORM */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-28">
         <div className="bg-white rounded-xl shadow-sm p-4">
 
           {/* TYPE */}
           <InputRow label="Type">
             <select
-              className="w-full text-sm outline-none bg-white border rounded px-2 py-1"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={type}
               onChange={(e) =>
                 setType(
@@ -129,7 +110,7 @@ export default function NewTransactionForm({
           {/* AMOUNT (FIXED) */}
           <InputRow label="Amount">
             <input
-              className="w-full text-sm outline-none"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="text"
               inputMode="decimal"
               value={amount}
@@ -140,7 +121,7 @@ export default function NewTransactionForm({
           {/* PAYEE */}
           <InputRow label="Payee">
             <input
-              className="w-full text-sm outline-none"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={payee}
               onChange={(e) => setPayee(e.target.value)}
             />
@@ -149,7 +130,7 @@ export default function NewTransactionForm({
           {/* CATEGORY */}
           <InputRow label="Category">
             <select
-              className="w-full text-sm outline-none bg-transparent"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={category}
               onChange={(e) =>
                 setCategory(e.target.value as Category)
@@ -166,7 +147,7 @@ export default function NewTransactionForm({
           {/* DATE */}
           <InputRow label="Date">
             <input
-              className="w-full text-sm outline-none"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -176,7 +157,7 @@ export default function NewTransactionForm({
           {/* NOTE */}
           <InputRow label="Note">
             <textarea
-              className="w-full text-sm outline-none resize-none"
+              className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -188,7 +169,7 @@ export default function NewTransactionForm({
         {/* ACTIONS */}
         <button
           onClick={save}
-          className="w-full mt-4 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600"
+          className="w-full mt-6 mb-6 bg-blue-500 text-white py-4 rounded-xl text-base font-semibold active:scale-[0.99] transition"
         >
           Save Transaction
         </button>
