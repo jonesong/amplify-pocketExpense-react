@@ -3,6 +3,7 @@ import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../../amplify/data/resource";
 import NewTransactionForm from "./NewTransactionForm";
 import EditTransactionForm from "./EditTransactionForm";
+import { getCategoryMeta } from "../../src/constants/categories";
 
 const client = generateClient<Schema>();
 
@@ -111,23 +112,31 @@ export default function TransactionPage({ account, onBack }: Props) {
             const amount = Number(t.amount);
             const isIncome = t.TransactionType === "INCOME";
             runningBalance += isIncome ? amount : -amount;
+            const meta = getCategoryMeta(t.category);
 
             return (
               <div
                 key={t.id}
                 onClick={() => setEditingTransactionId(t.id)}
-                className="flex justify-between gap-3 p-4 hover:bg-gray-50 cursor-pointer active:scale-[0.99] transition"
+                className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer active:scale-[0.99] transition"
               >
+                {/* CATEGORY ICON */}
+                <div
+                  className={`w-10 h-10 flex items-center justify-center rounded-full text-lg shrink-0 ${meta.bg}`}
+                >
+                  {meta.icon}
+                </div>
+
                 {/* LEFT */}
                 <div className="flex flex-col min-w-0 flex-1">
                   <div className="text-sm font-medium text-gray-900 truncate">
                     {t.payee ?? "No Payee"}
                   </div>
                   <div className="text-xs text-gray-500">
+                    {meta.label} ·{" "}
                     {t.date
                       ? new Intl.DateTimeFormat("en-US", {
-                          year: "numeric",
-                          month: "long",
+                          month: "short",
                           day: "numeric",
                           timeZone: "UTC",
                         }).format(new Date(t.date))

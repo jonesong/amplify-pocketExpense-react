@@ -4,6 +4,8 @@ import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
 import TransactionPage from "./components/TransactionPage";
 import NewTransactionForm from "./components/NewTransactionForm";
+import EditTransactionForm from "./components/EditTransactionForm";
+import { getCategoryMeta } from "./constants/categories";
 
 const client = generateClient<Schema>();
 
@@ -80,6 +82,7 @@ function App() {
     useState<Schema["Account"]["type"] | null>(null);
   const [accountName, setAccountName] = useState("");
   const [, setLoading] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
 
   // =======================
   async function loadAccounts() {
@@ -141,7 +144,18 @@ function App() {
 
   const week = buildWeek(transactions, weekOffset);
   const weekDates = new Set(week.map((d) => d.date));
-  const weekTransactions = transactions.filter((t) => weekDates.has(t.date));
+  const weekTransactions = transactions
+    .filter((t) => weekDates.has(t.date))
+    .sort((a, b) => {
+      // Primary: date descending (latest day first)
+      if (b.date > a.date) return 1;
+      if (b.date < a.date) return -1;
+      // Secondary: createdAt descending (latest entry first within same day)
+      return (
+        new Date(b.createdAt ?? 0).getTime() -
+        new Date(a.createdAt ?? 0).getTime()
+      );
+    });
 
   // =======================
   // TRANSACTION PAGE
@@ -209,7 +223,7 @@ function App() {
           <div className="p-4">
             <h2 className="text-sm font-semibold mb-2">This Week</h2>
 
-            <div className="flex items-center justify-between mb-1 text-[10px]">
+            <div className="flex items-center justify-between mb-1 text-xs">
               <button
                 onClick={() => setWeekOffset((prev) => prev - 1)}
                 className="px-2 py-0.5 bg-gray-200 rounded text-[10px]"
@@ -266,31 +280,48 @@ function App() {
                   No transactions this week
                 </div>
               ) : (
-                weekTransactions.map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition"
-                  >
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium">
-                        {t.payee ?? "No Payee"}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {t.accountName ?? "Account"}
-                      </div>
-                    </div>
+                weekTransactions.map((t) => {
+                  const meta = getCategoryMeta(t.category);
+                  return (
                     <div
-                      className={`text-sm font-semibold ${
-                        t.TransactionType === "INCOME"
-                          ? "text-green-600"
-                          : "text-red-500"
-                      }`}
+                      key={t.id}
+                      onClick={() => setEditingTransactionId(t.id)}
+                      className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition cursor-pointer"
                     >
-                      {t.TransactionType === "INCOME" ? "+" : "-"}₱
-                      {Number(t.amount).toFixed(2)}
+                      {/* CATEGORY ICON */}
+                      <div
+                        className={`w-10 h-10 flex items-center justify-center rounded-full text-lg shrink-0 ${meta.bg}`}
+                      >
+                        {meta.icon}
+                      </div>
+
+                      {/* LEFT */}
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {t.payee ?? "No Payee"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {t.accountName ?? "Account"} · {meta.label}
+                        </div>
+                      </div>
+
+                      {/* RIGHT AMOUNT */}
+                      <div className="flex flex-col">
+                        <div className={`text-sm font-semibold ${t.TransactionType === "INCOME"
+                            ? "text-green-600"
+                            : "text-red-500"
+                          }`}
+                        >
+                          {t.TransactionType === "INCOME" ? "+" : "-"}₱
+                          {Number(t.amount).toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-400 text-right">
+                          {t.date.slice(5)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -389,6 +420,30 @@ function App() {
           />
         </div>
       )}
+
+      {/* EDIT TRANSACTION MODAL */}
+      {editingTransactionId && (() => {
+        const editingTransaction = transactions.find(
+          (t) => t.id === editingTransactionId
+        );
+        if (!editingTransaction) return null;
+        return (
+          <div className="fixed inset-0 z-50">
+            <EditTransactionForm
+              transaction={editingTransaction}
+              onSaved={() => {
+                setEditingTransactionId(null);
+                loadTransactions();
+              }}
+              onDeleted={() => {
+                setEditingTransactionId(null);
+                loadTransactions();
+              }}
+              onCancel={() => setEditingTransactionId(null)}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

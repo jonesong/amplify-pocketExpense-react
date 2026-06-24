@@ -231,7 +231,7 @@ export default function EditTransactionForm({
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className={`w-full mt-3 mb-6 py-4 rounded-xl text-base font-semibold active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed ${confirmDelete
+          className={`w-full mt-3 mb-6 bg-red-200 py-4 rounded-xl text-base font-semibold active:scale-[0.99] transition disabled:opacity-50 disabled:cursor-not-allowed ${confirmDelete
               ? "bg-red-500 text-white"
               : "bg-gray-100 text-red-500"
             }`}
