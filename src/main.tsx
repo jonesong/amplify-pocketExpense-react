@@ -13,7 +13,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Authenticator
       loginMechanisms={["email"]}
-      hideSignUp={true} // ✅ THIS NOW WORKS
+      hideSignUp={false} // ✅ THIS NOW WORKS
     >
       <App />
     </Authenticator>

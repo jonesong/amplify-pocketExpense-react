@@ -21,6 +21,7 @@ const TransactionCategory = a.enum([
 const schema = a.schema({
   // 1. Account Model (e.g., Gcash, Bank, Cash)
   Account: a.model({
+    owner: a.string(),
     name: a.string().required(),
     initialBalance: a.float().default(0),
     transactions: a.hasMany('Transaction', 'accountId'), // One-to-Many Relationship
@@ -33,6 +34,7 @@ const schema = a.schema({
       'INCOME',
       'TRANSFER',
     ]),
+    owner: a.string(),
     amount: a.float().required(),
     payee: a.string(),
     category: TransactionCategory,
