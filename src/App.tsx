@@ -5,6 +5,7 @@ import type { Schema } from "../amplify/data/resource";
 import TransactionPage from "./components/TransactionPage";
 import NewTransactionForm from "./components/NewTransactionForm";
 import EditTransactionForm from "./components/EditTransactionForm";
+import ReportPage from "./components/ReportPage";
 import { getCategoryMeta } from "./constants/categories";
 
 const client = generateClient<Schema>();
@@ -75,7 +76,7 @@ function App() {
   const [transactions, setTransactions] = useState<TransactionUI[]>([]);
   const [selectedAccount, setSelectedAccount] =
     useState<Schema["Account"]["type"] | null>(null);
-  const [view, setView] = useState<"calendar" | "dashboard">("calendar");
+  const [view, setView] = useState<"calendar" | "dashboard" | "report">("calendar");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNewTransaction, setShowNewTransaction] = useState(false);
   const [selectedAccountForTx, setSelectedAccountForTx] =
@@ -83,6 +84,7 @@ function App() {
   const [accountName, setAccountName] = useState("");
   const [, setLoading] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
+  const [confirmDeleteAccountId, setConfirmDeleteAccountId] = useState<string | null>(null);
 
   // =======================
   async function loadAccounts() {
@@ -119,6 +121,22 @@ function App() {
     setLoading(false);
     setAccountName("");
     await loadAccounts();
+  }
+
+  async function deleteAccount(accountId: string) {
+    // Delete all transactions belonging to this account first
+    const { data: txToDelete } = await client.models.Transaction.list({
+      filter: { accountId: { eq: accountId } },
+    });
+
+    await Promise.all(
+      txToDelete.map((t) => client.models.Transaction.delete({ id: t.id }))
+    );
+
+    await client.models.Account.delete({ id: accountId });
+    setConfirmDeleteAccountId(null);
+    await loadAccounts();
+    await loadTransactions();
   }
 
   useEffect(() => {
@@ -209,6 +227,12 @@ function App() {
                   onClick={() => { setView("dashboard"); setMenuOpen(false); }}
                 >
                   📊 Dashboard
+                </button>
+                <button
+                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100"
+                  onClick={() => { setView("report"); setMenuOpen(false); }}
+                >
+                  📋 Report
                 </button>
               </div>
             )}
@@ -355,16 +379,53 @@ function App() {
                 key={acc.id}
                 className="p-4 bg-white rounded-xl shadow-sm flex justify-between items-center active:scale-[0.99] transition mb-3"
               >
-                <div>{acc.name}</div>
-                <button
-                  onClick={() => setSelectedAccount(acc)}
-                  className="bg-blue-500 text-white px-4 py-1 rounded"
-                >
-                  View
-                </button>
+                <div className="font-medium">{acc.name}</div>
+
+                <div className="flex gap-2">
+                  {confirmDeleteAccountId === acc.id ? (
+                    <>
+                      <button
+                        onClick={() => deleteAccount(acc.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteAccountId(null)}
+                        className="bg-gray-200 text-gray-600 px-3 py-1 rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setSelectedAccount(acc)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteAccountId(acc.id)}
+                        className="bg-gray-100 text-red-500 px-3 py-1 rounded text-sm"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>
+        )}
+
+        {/* ================= REPORT ================= */}
+        {view === "report" && (
+          <ReportPage
+            transactions={transactions}
+            accounts={accounts}
+            onBack={() => setView("calendar")}
+          />
         )}
       </div>
 
