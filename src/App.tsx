@@ -68,6 +68,20 @@ type TransactionUI = Schema["Transaction"]["type"] & {
 };
 
 // =======================
+// AVATAR HELPERS
+// =======================
+function getInitials(loginId?: string) {
+  if (!loginId) return "?";
+  const name = loginId.split("@")[0];
+  return name.slice(0, 2).toUpperCase();
+}
+
+function getDisplayName(loginId?: string) {
+  if (!loginId) return "User";
+  return loginId.split("@")[0];
+}
+
+// =======================
 function App() {
   const { user, signOut } = useAuthenticator();
 
@@ -85,16 +99,15 @@ function App() {
   const [, setLoading] = useState(false);
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const [confirmDeleteAccountId, setConfirmDeleteAccountId] = useState<string | null>(null);
+  const [showUserPopover, setShowUserPopover] = useState(false);
 
   // =======================
   async function loadAccounts() {
-    // Amplify owner auth automatically filters to the signed-in user's records
     const { data } = await client.models.Account.list();
     setAccounts(data);
   }
 
   async function loadTransactions() {
-    // Both lists are already scoped to the current owner by Amplify
     const [{ data: tx }, { data: acc }] = await Promise.all([
       client.models.Transaction.list(),
       client.models.Account.list(),
@@ -114,17 +127,13 @@ function App() {
     e.preventDefault();
     if (!accountName.trim()) return;
     setLoading(true);
-    // owner is set automatically by Amplify from the authenticated user
-    await client.models.Account.create({
-      name: accountName.trim(),
-    });
+    await client.models.Account.create({ name: accountName.trim() });
     setLoading(false);
     setAccountName("");
     await loadAccounts();
   }
 
   async function deleteAccount(accountId: string) {
-    // Delete all transactions belonging to this account first
     const { data: txToDelete } = await client.models.Transaction.list({
       filter: { accountId: { eq: accountId } },
     });
@@ -143,15 +152,12 @@ function App() {
     loadAccounts();
     loadTransactions();
 
-    // observeQuery is already scoped to the current owner via allow.owner()
     const sub = client.models.Account.observeQuery().subscribe({
       next: ({ items }) => setAccounts(items),
     });
 
     const txSub = client.models.Transaction.observeQuery().subscribe({
-      next: async () => {
-        await loadTransactions();
-      },
+      next: async () => { await loadTransactions(); },
     });
 
     return () => {
@@ -165,10 +171,8 @@ function App() {
   const weekTransactions = transactions
     .filter((t) => weekDates.has(t.date))
     .sort((a, b) => {
-      // Primary: date descending (latest day first)
       if (b.date > a.date) return 1;
       if (b.date < a.date) return -1;
-      // Secondary: createdAt descending (latest entry first within same day)
       return (
         new Date(b.createdAt ?? 0).getTime() -
         new Date(a.createdAt ?? 0).getTime()
@@ -188,57 +192,122 @@ function App() {
   }
 
   const today = formatDateKey(new Date());
+  const loginId = user?.signInDetails?.loginId;
+  const initials = getInitials(loginId);
+  const displayName = getDisplayName(loginId);
 
   return (
     <div className="h-dvh bg-gray-50 flex flex-col">
 
-      {/* HEADER */}
-      <div className="sticky top-0 z-20 flex items-center justify-between p-4 bg-white border-b">
-        <h1 className="text-base font-semibold truncate max-w-[60%]">
-          {user?.signInDetails?.loginId}'s Money Tracker
-        </h1>
+      {/* ======================== HEADER ======================== */}
+      <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
+        <div className="flex items-center justify-between px-4 py-3">
 
-        <div className="flex gap-2">
-          <button
-            onClick={signOut}
-            className="px-3 py-1 bg-gray-800 text-white rounded-lg"
-          >
-            Sign out
-          </button>
+          {/* LEFT: Logo + branding */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+              <span className="text-white text-lg font-bold leading-none">$</span>
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest">
+                Money Tracker
+              </span>
+              <span className="text-sm font-bold text-gray-800">
+                {displayName}
+              </span>
+            </div>
+          </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="w-10 h-10 bg-orange-400 rounded-lg hover:bg-orange-500"
-            >
-              ☰
-            </button>
+          {/* RIGHT: Avatar + hamburger */}
+          <div className="flex items-center gap-2">
 
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-lg w-44 z-50">
-                <button
-                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100"
-                  onClick={() => { setView("calendar"); setMenuOpen(false); }}
+            {/* Avatar / user popover */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowUserPopover((v) => !v); setMenuOpen(false); }}
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white hover:ring-blue-200 transition-all"
+              >
+                {initials}
+              </button>
+
+              {showUserPopover && (
+                <div className="absolute right-0 mt-2 w-58 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden" style={{ width: "15rem" }}>
+                  <div className="px-4 pt-4 pb-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold mb-2">
+                      {initials}
+                    </div>
+                    <p className="text-xs text-gray-500">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800 truncate">{loginId}</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowUserPopover(false); signOut(); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 bg-gray-500 hover:bg-red-300 transition font-medium"
+                  >
+                    <span className="text-base">🚪</span>
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Hamburger */}
+            <div className="relative">
+              <button
+                onClick={() => { setMenuOpen(!menuOpen); setShowUserPopover(false); }}
+                className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] rounded-xl bg-gray-100 hover:bg-gray-200 transition"
+              >
+                <span className="w-4 h-[2px] bg-gray-600 rounded-full" />
+                <span className="w-4 h-[2px] bg-gray-600 rounded-full" />
+                <span className="w-4 h-[2px] bg-gray-600 rounded-full" />
+              </button>
+
+              {menuOpen && (
+                <div
+                  className="absolute right-0 mt-2 border border-gray-100 shadow-xl rounded-2xl w-48 z-50 overflow-hidden"
+                  style={{ backgroundColor: "#ffffff" }}
                 >
-                  📅 Calendar
-                </button>
-                <button
-                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100"
-                  onClick={() => { setView("dashboard"); setMenuOpen(false); }}
-                >
-                  📊 Dashboard
-                </button>
-                <button
-                  className="w-full text-left px-4 py-3 !text-black hover:bg-gray-100"
-                  onClick={() => { setView("report"); setMenuOpen(false); }}
-                >
-                  📋 Report
-                </button>
-              </div>
-            )}
+                  {[
+                    { icon: "📅", label: "Calendar", val: "calendar" as const },
+                    { icon: "📊", label: "Dashboard", val: "dashboard" as const },
+                    { icon: "📋", label: "Report", val: "report" as const },
+                  ].map(({ icon, label, val }) => (
+                    <button
+                      key={val}
+                      style={{
+                        color: view === val ? "#2563eb" : "#1f2937",
+                        backgroundColor: view === val ? "#eff6ff" : "transparent",
+                        width: "100%",
+                        textAlign: "left",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "12px 16px",
+                        fontSize: "0.875rem",
+                        fontWeight: view === val ? 600 : 400,
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => { setView(val); setMenuOpen(false); }}
+                    >
+                      <span>{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
       </div>
+
+      {/* Click-outside dismiss */}
+      {(menuOpen || showUserPopover) && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => { setMenuOpen(false); setShowUserPopover(false); }}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto">
 
@@ -250,7 +319,7 @@ function App() {
             <div className="flex items-center justify-between mb-1 text-xs">
               <button
                 onClick={() => setWeekOffset((prev) => prev - 1)}
-                className="px-2 py-0.5 bg-gray-200 rounded text-[10px]"
+                className="px-2 py-0.5 bg-gray-200 rounded text-[8px] !text-gray-600"
               >
                 ◀ Prev
               </button>
@@ -259,7 +328,7 @@ function App() {
               </div>
               <button
                 onClick={() => setWeekOffset((prev) => prev + 1)}
-                className="px-2 py-0.5 bg-gray-200 rounded text-[10px]"
+                className="px-2 py-0.5 bg-gray-200 rounded text-[8px] !text-gray-600"
               >
                 Next ▶
               </button>
@@ -287,7 +356,7 @@ function App() {
                       d.total >= 0 ? "text-green-600" : "text-red-500"
                     }`}
                   >
-                    ₱{Math.abs(d.total).toFixed(0)}
+                    ${Math.abs(d.total).toFixed(0)}
                   </div>
                 </div>
               ))}
@@ -312,14 +381,12 @@ function App() {
                       onClick={() => setEditingTransactionId(t.id)}
                       className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition cursor-pointer"
                     >
-                      {/* CATEGORY ICON */}
                       <div
                         className={`w-10 h-10 flex items-center justify-center rounded-full text-lg shrink-0 ${meta.bg}`}
                       >
                         {meta.icon}
                       </div>
 
-                      {/* LEFT */}
                       <div className="flex flex-col flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">
                           {t.payee ?? "No Payee"}
@@ -329,14 +396,13 @@ function App() {
                         </div>
                       </div>
 
-                      {/* RIGHT AMOUNT */}
                       <div className="flex flex-col">
                         <div className={`text-sm font-semibold ${t.TransactionType === "INCOME"
                             ? "text-green-600"
                             : "text-red-500"
                           }`}
                         >
-                          {t.TransactionType === "INCOME" ? "+" : "-"}₱
+                          {t.TransactionType === "INCOME" ? "+" : "-"}$
                           {Number(t.amount).toFixed(2)}
                         </div>
                         <div className="text-xs text-gray-400 text-right">
@@ -447,7 +513,7 @@ function App() {
                     setSelectedAccountForTx(acc);
                     setShowNewTransaction(false);
                   }}
-                  className="w-full text-left p-3 border rounded mb-2 bg-gray-100 hover:bg-gray-200"
+                  className="w-full text-left p-3 border rounded mb-2 !text-blue-500 bg-gray-100 hover:bg-gray-200"
                 >
                   {acc.name}
                 </button>
@@ -456,7 +522,7 @@ function App() {
 
             <button
               onClick={() => setShowNewTransaction(false)}
-              className="w-full mt-2 text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 py-2 rounded"
+              className="w-full mt-2 text-sm !text-red-500 bg-gray-100 hover:bg-gray-200 py-2 rounded"
             >
               Cancel
             </button>

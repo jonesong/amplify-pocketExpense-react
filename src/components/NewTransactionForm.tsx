@@ -40,7 +40,7 @@ export default function NewTransactionForm({
   onSaved,
   onCancel,
 }: Props) {
-  const [type, setType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
+  const [type, setType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
   const [amount, setAmount] = useState("");
   const [payee, setPayee] = useState("");
   const [category, setCategory] = useState<Category>("OTHER");
@@ -111,12 +111,11 @@ export default function NewTransactionForm({
               className="w-full text-base px-3 py-3 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={type}
               onChange={(e) =>
-                setType(e.target.value as "INCOME" | "EXPENSE" | "TRANSFER")
+                setType(e.target.value as "INCOME" | "EXPENSE")
               }
             >
               <option value="EXPENSE">Expense</option>
               <option value="INCOME">Income</option>
-              <option value="TRANSFER">Transfer</option>
             </select>
           </InputRow>
 
