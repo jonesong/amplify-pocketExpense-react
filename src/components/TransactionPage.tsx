@@ -96,7 +96,7 @@ export default function TransactionPage({ account, onBack }: Props) {
         {/* START BALANCE */}
         <div className="flex justify-between px-4 py-3 bg-white rounded-lg shadow-sm">
           <div className="text-sm font-medium text-gray-700">Start Balance</div>
-          <div className="text-sm font-semibold text-gray-900">₱0.00</div>
+          <div className="text-sm font-semibold text-gray-900">$0.00</div>
         </div>
 
         {/* EMPTY STATE */}
@@ -156,10 +156,10 @@ export default function TransactionPage({ account, onBack }: Props) {
                       isIncome ? "text-green-600" : "text-red-500"
                     }`}
                   >
-                    {isIncome ? "+" : "-"}₱{formatAmount(amount)}
+                    {isIncome ? "+" : "-"}${formatAmount(amount)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ₱{formatAmount(runningBalance)}
+                    ${formatAmount(runningBalance)}
                   </div>
                 </div>
               </div>
@@ -176,7 +176,7 @@ export default function TransactionPage({ account, onBack }: Props) {
             finalBalance >= 0 ? "text-gray-900" : "text-red-500"
           }`}
         >
-          ₱{formatAmount(finalBalance)}
+          ${formatAmount(finalBalance)}
         </div>
       </div>
 

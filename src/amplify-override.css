@@ -1,0 +1,74 @@
+/* amplify-override.css
+   Import this in main.tsx AFTER the Amplify UI stylesheet:
+   import "@aws-amplify/ui-react/styles.css";
+   import "./amplify-override.css";
+*/
+
+/* ── Kill the purple body background ── */
+body,
+html,
+#root {
+  background: #f0f4ff !important;
+  background-image: none !important;
+}
+
+/* Amplify sets a gradient on the authenticator wrapper itself */
+[data-amplify-authenticator],
+[data-amplify-authenticator] > div,
+.amplify-authenticator,
+.amplify-authenticator__column {
+  background: #f0f4ff !important;
+  background-image: none !important;
+  min-height: 100dvh;
+}
+
+/* ── Card ── */
+[data-amplify-authenticator] [data-amplify-form],
+.amplify-card {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 40px rgba(99, 102, 241, 0.12) !important;
+  border: 1px solid #e0e7ff !important;
+}
+
+/* ── Primary button ── */
+[data-amplify-authenticator] .amplify-button[data-variation="primary"],
+.amplify-button--primary {
+  background: linear-gradient(135deg, #3b82f6, #4f46e5) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+}
+
+[data-amplify-authenticator] .amplify-button[data-variation="primary"]:hover,
+.amplify-button--primary:hover {
+  background: linear-gradient(135deg, #2563eb, #4338ca) !important;
+}
+
+/* ── Input fields ── */
+.amplify-input {
+  border-radius: 10px !important;
+  border-color: #e0e7ff !important;
+  color: #1f2937 !important;
+}
+
+.amplify-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* ── Labels ── */
+.amplify-label {
+  color: #374151 !important;
+}
+
+/* ── Tab toggle ── */
+.amplify-tabs-item[data-state="active"] {
+  color: #4f46e5 !important;
+  border-bottom-color: #4f46e5 !important;
+}
+
+/* ── Links ── */
+.amplify-button[data-variation="link"] {
+  color: #4f46e5 !important;
+}

@@ -289,19 +289,19 @@ export default function ReportPage({ transactions, accounts, onBack }: Props) {
             <div className="bg-white rounded-xl shadow-sm p-3 text-center">
               <div className="text-[10px] !text-gray-900 mb-1">Income</div>
               <div className="text-sm font-bold text-green-600">
-                ₱{formatAmount(summary.income)}
+                ${formatAmount(summary.income)}
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-3 text-center">
               <div className="text-[10px] !text-gray-900 mb-1">Expense</div>
               <div className="text-sm font-bold text-red-500">
-                ₱{formatAmount(summary.expense)}
+                ${formatAmount(summary.expense)}
               </div>
             </div>
             <div className="bg-white rounded-xl shadow-sm p-3 text-center">
               <div className="text-[10px] !text-gray-900 mb-1">Net</div>
               <div className={`text-sm font-bold ${summary.net >= 0 ? "text-gray-900" : "text-red-500"}`}>
-                {summary.net < 0 ? "-" : ""}₱{formatAmount(summary.net)}
+                {summary.net < 0 ? "-" : ""}${formatAmount(summary.net)}
               </div>
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function ReportPage({ transactions, accounts, onBack }: Props) {
                         </span>
                       </div>
                       <span className="text-xs font-semibold text-red-500">
-                        ₱{formatAmount(total)}
+                        ${formatAmount(total)}
                       </span>
                     </div>
                     {/* Progress bar */}
@@ -374,7 +374,7 @@ export default function ReportPage({ transactions, accounts, onBack }: Props) {
                       </div>
                     </div>
                     <div className={`text-sm font-semibold shrink-0 ${isIncome ? "text-green-600" : "text-red-500"}`}>
-                      {isIncome ? "+" : "-"}₱{formatAmount(Number(t.amount))}
+                      {isIncome ? "+" : "-"}${formatAmount(Number(t.amount))}
                     </div>
                   </div>
                 );

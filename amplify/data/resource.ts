@@ -32,7 +32,6 @@ const schema = a.schema({
     TransactionType: a.enum([
       'EXPENSE',
       'INCOME',
-      'TRANSFER',
     ]),
     owner: a.string(),
     amount: a.float().required(),
