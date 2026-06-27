@@ -5,4 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  base: './',          // ← this is critical
+  build: {
+    outDir: 'dist',    // ← Capacitor looks here
+  },
 })

@@ -7,10 +7,16 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:dev": "npx ampx generate outputs && npm run build && npx cap sync",
+    "build:prod": "npx ampx generate outputs --branch main --app-id d126648qulzm1f && npm run build && npx cap sync",
+    "sync:prod": "npm run build:prod && npx cap sync"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "~6.13.2",
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "aws-amplify": "~6.15.10",
     "lucide-react": "^1.21.0",
     "react": "~18.3.1",
