@@ -27,3 +27,8 @@ dist-ssr
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Capacitor
+android/
+ios/
+dist/
