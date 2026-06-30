@@ -198,7 +198,7 @@ function App() {
                     </p>
                   </div>
                   <div className="px-4 py-3 text-xs text-gray-400">
-                    No account, no cloud sync — everything is saved to SQLite on your phone.
+                    No account, no cloud sync — everything is saved on your phone.
                   </div>
                 </div>
               )}
