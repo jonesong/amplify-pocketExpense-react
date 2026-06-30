@@ -9,7 +9,7 @@
 
 import { useState, useMemo } from "react";
 import type { Account, TransactionUI } from "../db";
-import { categories, getCategoryMeta } from "./constants/categories";
+import { categories, getCategoryMeta } from "../constants/categories";
 
 interface Props {
   transactions: TransactionUI[];

@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import { updateTransaction, deleteTransaction, type Transaction, type TransactionType, type Category } from "../db";
-import { categories } from "./constants/categories";
+import { categories } from "../constants/categories";
 
 function InputRow({
   label,

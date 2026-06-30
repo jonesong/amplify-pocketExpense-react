@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { listTransactions, type Account, type Transaction } from "../db";
 import NewTransactionForm from "./NewTransactionForm";
 import EditTransactionForm from "./EditTransactionForm";
-import { getCategoryMeta } from "./constants/categories";
+import { getCategoryMeta } from "../constants/categories";
 
 interface Props {
   account: Account;
